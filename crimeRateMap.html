@@ -1,0 +1,109 @@
+{% load static %} 
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map-left {
+        height: 650px;
+        width: 100%;
+      }
+      #map-right {
+        height: 650px;
+        width: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0.2%;
+        padding: 0%;
+      }      
+      .row {
+        display: flex;
+      }
+      .colomn {
+        flex: 50%;
+        margin: 1%;
+      }
+      .colomn-1 {
+        flex: 50%;
+        margin: 0%;
+        color:plum;
+        text-align: center;
+      }
+
+    </style>
+  </head>
+  <body style="background-color:darkslategrey">
+    <div class="row">
+        <div class="colomn-1" ><h1>Crime Heat Map</h1></div>
+        <div class="colomn-1" ><h1>Markers (click for details)</h1></div>
+    </div>
+    <div class="row">
+        <div class="colomn" id="map-left"></div>
+        <div class="colomn" id="map-right"></div>
+    </div>
+    
+    <script>
+      var map_left;
+      var map_right;
+      function initMap() {
+        map_left = new google.maps.Map(document.getElementById('map-left'), {
+          zoom: 10,
+          center: {lat: 34.0237, lng:  -118.343},
+          mapTypeId: 'terrain'
+        });
+        map_right = new google.maps.Map(document.getElementById('map-right'), {
+          zoom: 10,
+          center: {lat: 34.0237, lng:  -118.343},
+          mapTypeId: 'terrain'
+        });
+      }
+
+      window.eqfeed_callback = function(results) {
+      
+        //markers clustering
+        var markers = results.locations.map(function(loca, i) {
+          var coords = loca.location;
+          var latLng = new google.maps.LatLng(coords[1], coords[0]);         
+          var crime_event = loca.crimeEvent;
+          //console.log(crime_event);
+          var infowindow = new google.maps.InfoWindow({
+            content: crime_event
+          });
+          var marker = new google.maps.Marker({
+              position: latLng,        
+          });
+          marker.addListener('click', function() {
+            infowindow.open(map_right, marker);
+          });
+      
+          return marker;
+        });
+        
+        // heatmap
+        var heatmapData = [];
+        for (var i = 0; i < results.locations.length; i++) {
+          var coords = results.locations[i].location;
+          console.log("working");
+          var latLng = new google.maps.LatLng(coords[1], coords[0]);
+          heatmapData.push(latLng);
+        }
+        var heatmap = new google.maps.visualization.HeatmapLayer({
+          data: heatmapData,
+          dissipating: true,
+          map: map_left,
+          radius: 20,
+          //gradient: ['transparent', '#f00', '#0f0', '#00f'],
+        });
+        // Add a marker clusterer to manage the markers.
+        var markerCluster = new MarkerClusterer(map_right, markers,
+            {imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'});
+        }
+    </script> 
+    <script src="http://maps.googleapis.com/maps/api/js?key=YouyKey&libraries=visualization&callback=initMap"></script> 
+    <script src="https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js"></script>
+    <script src="{% static 'hello/crime_coordinates.js' %}" ></script>
+  </body>
+</html>
